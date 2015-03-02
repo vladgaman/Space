@@ -2,61 +2,67 @@ import java.util.ArrayList;
 import java.util.List;
 public class Vertex
 {
-	public float x,y,z;
-	public float u,v;
-	public float height;
-	public Vertex(float X, float Y, float Z)
+	float x,y,z;
+	float u,v;
+	float height;
+	boolean isPole = false;
+
+	Vertex(float X, float Y, float Z)
 	{
 		x = X; y = Y; z = Z;
 	}
 
-	public void add(Vertex v)
+	Vertex(Vertex v)
+	{
+		x = v.x; y = v.y; z = v.z;
+	}
+
+	void add(Vertex v)
 	{
 		x += v.x; y += v.y; z += v.z;
 	}
 
-	public void sub(Vertex v)
+	void sub(Vertex v)
 	{
 		x -= v.x; y -= v.y; z -= v.z;
 	}
 
-	public void div(float n)
+	void div(float n)
 	{
 		x /= n; y /= n; z /= n;
 	}
 
-	public void mult(float n)
+	void mult(float n)
 	{
 		x *= n; y *= n; z *= n;
 	}
 
-	public float getMagnitude()
+	float getMagnitude()
 	{
 		return (float)Math.sqrt(Math.pow(x,2) + Math.pow(y,2) + Math.pow(z,2));
 	}
 
-	public Vertex getMidV(Vertex v)
+	Vertex getMidV(Vertex v)
 	{
 		return new Vertex((x + v.x)/2f,(y + v.y)/2f,(z + v.z)/2f);
 	}
 
-	public void normalize()
+	void normalize()
 	{
 		float len = (float)Math.sqrt(Math.pow(x,2) + Math.pow(y,2) + Math.pow(z,2));
-		float t = (float)(1.0 + Math.sqrt(5.0)) / 2.0f;
 		x /= len;
 		y /= len;
 		z /= len;
-		setTex(len);
+		setTex();
 		int U = (int)(u * 639);
 		int V = (int)(v * 639);
 		height = TextureHeightMap.height[U][V];
 	} 
-	public void setHeight(float h)
+	void setHeight(float h)
 	{
 		height = h;
 	}
-	public void adjustHeight()
+	void adjustHeight()
 	{
 		double min = 1/3 + 1;
 		float h = (height + 1)/4 + 1;
@@ -72,12 +78,48 @@ public class Vertex
 			y *= 1.20;
 			z *= 1.20;
 		}
-		
 	}
-	public void setTex(float len)
+
+	void setTex()
 	{
 		u = (float)(0.5 + Math.atan2(z,x)/(Math.PI *2));
 		v = (float)(0.5 - Math.asin(y)/Math.PI);
+	}
+
+	void rotateAX(float angle)
+	{
+		y = (float)(Math.cos(Math.toRadians(angle)) * y - Math.sin(Math.toRadians(angle)) * z);
+		z = (float)(Math.sin(Math.toRadians(angle)) * y + Math.cos(Math.toRadians(angle)) * z);
+	}
+
+	void rotateAY(float angle)
+	{
+		x = (float)(Math.cos(Math.toRadians(angle)) * x - Math.sin(Math.toRadians(angle)) * z);
+		z = (float)(Math.sin(Math.toRadians(angle)) * x + Math.cos(Math.toRadians(angle)) * z);
+	}
+
+	void rotateAZ(float angle)
+	{
+		x = (float)(Math.cos(angle) * x - Math.sin(angle) * y);
+		y = (float)(Math.sin(angle) * x + Math.cos(angle) * y);
+	}
+
+	void rotateAXR(float angle)
+	{
+		y = (float)(Math.cos(angle) * y - Math.sin(angle) * z);
+		z = (float)(Math.sin(angle) * y + Math.cos(angle) * z);
+	}
+
+	void rotateAYR(float angle)
+	{
+		x = (float)(Math.cos(angle) * x - Math.sin(angle) * z);
+		z = (float)(Math.sin(angle) * x + Math.cos(angle) * z);
+	}
+
+	void rotateAZR(float angle)
+	{
+		x = (float)(Math.cos(angle) * x - Math.sin(angle) * y);
+		y = (float)(Math.sin(angle) * x + Math.cos(angle) * y);
 	}
 
 	@Override
@@ -98,5 +140,13 @@ public class Vertex
 			return false;
 	}
 
+	String getPrint()
+	{
+		return x + " " + y + " " + z;
+	} 
 
+	String getPrint2()
+	{
+		return u + " " + v;
+	} 
 }
