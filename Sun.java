@@ -1,14 +1,20 @@
 import java.util.ArrayList;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.util.glu.GLU.*;
+import org.lwjgl.util.glu.Sphere;
 
 public class Sun extends CelestialBody
 {
 	private ArrayList<Planet> planets;
 	private float period;
 	private Sun barycenter;
+	private Vertex color = new Vertex(1,1,0);
 	public int first = 0;
-	Sun(Vector coord, float rad, float m)
+	Sun(Vector coord, float rad, float mass,long seed)
 	{
-		super(coord,rad,m);
+		super(coord,rad,mass,seed);
 		planets = new ArrayList<Planet>();
 	}// constructor
 
@@ -53,7 +59,7 @@ public class Sun extends CelestialBody
 			coordinates.sub(barycenterV);
 			orbitingTo.getCoordinates().sub(barycenterV);
 			barycenterV = new Vector(0,0,0);
-			barycenter = new Sun(barycenterV,distance,mass+orbitingTo.getMass());
+			barycenter = new Sun(barycenterV,distance,mass+orbitingTo.getMass(),-1);
 		}
 		relativeCoord = new Vector(coordinates);
 		//float accelerationS = (float)((G*(orbitingTo.getMass()))/Math.pow(relativeCoord.getMagnitude(),2));
@@ -105,5 +111,22 @@ public class Sun extends CelestialBody
 	Sun getBarycenter()
 	{
 		return barycenter;
+	}
+
+	void setColor(Vertex col)
+	{
+		color = new Vertex(col.x/255,col.y/255,col.z/255);
+	}
+
+	@Override
+	void draw(Frustum cam)
+	{
+		glPushMatrix();
+		glTranslatef(coordinates.x,coordinates.y,coordinates.z);
+		glColor3f(color.x,color.y,color.z);
+		Sphere s = new Sphere();
+		s.draw(radius,10,10);
+
+		glPopMatrix();
 	}
 }

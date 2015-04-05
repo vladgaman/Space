@@ -37,6 +37,11 @@ public class Vertex
 		x *= n; y *= n; z *= n;
 	}
 
+	Vertex cross(Vertex v)
+	{
+		return new Vertex(y*v.z - z*v.y, z*v.x - x*v.z, x*v.y - y*v.x);
+	}
+
 	float getMagnitude()
 	{
 		return (float)Math.sqrt(Math.pow(x,2) + Math.pow(y,2) + Math.pow(z,2));
@@ -62,22 +67,13 @@ public class Vertex
 	{
 		height = h;
 	}
-	void adjustHeight()
+	void adjustHeight(float h)
 	{
 		double min = 1/3 + 1;
-		float h = (height + 1)/4 + 1;
-		if(height>=0)
-		{
-			x *= h;
-			y *= h;
-			z *= h;
-		}
-		else
-		{
-			x *= 1.20;
-			y *= 1.20;
-			z *= 1.20;
-		}
+		height = (height/5 + 1)/2*h ;
+		x *= height;
+		y *= height;
+		z *= height;
 	}
 
 	void setTex()
@@ -148,5 +144,5 @@ public class Vertex
 	String getPrint2()
 	{
 		return u + " " + v;
-	} 
+	}
 }

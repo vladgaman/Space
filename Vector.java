@@ -69,4 +69,9 @@ public class Vector
 		else
 			return false;
 	}
+
+	String getPrint()
+	{
+		return x + " " + y + " " + z;
+	}
 }

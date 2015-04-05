@@ -1,0 +1,12 @@
+1. ./build Game.java 		- build the program
+2. ./run Game <a number> 	- is used to run the program with a chosen positive number
+3. Q and E 					- are used for zooming in and out
+4. RightControl And Right Shift 	- are used for modify the zoom factor
+5. Up and Down				- speed up the time
+6. LeftControl + T 			- Top view
+7. LeftControl + L 			- Left view
+8. LeftControl + F 			- Front view
+9. LeftAlt + P 				- switch planet view mode
+10. LeftAlt + M				- switch moon view mode (if any)
+11. LeftAlt + S 			- switch sun view mode
+12. Left and Right 			- to switch between planets, moons or suns(if two)

@@ -16,12 +16,7 @@ public class TextureHeightMap
 {
 	private static final int BYTES_PER_PIXEL = 3;//3 for RGB, 4 for RGBA
 	public static float height [][];
-	public static Vertex lerpColor(Vertex c1, Vertex c2,double amt)
-	{
-		return new Vertex((float)(c1.x + amt*(c2.x - c1.x)), (float)(c1.y + amt*(c2.y - c1.y))
-						  ,(float)(c1.z + amt*(c2.z - c1.z)));
-	}
-	public static int createHeightMap(long seed)
+	public static int createHeightMap(long seed,TextureColor texCol)
 	{
 		double rx = new Random(seed).nextDouble()*1000;
 		double ry = new Random((long)(rx + seed)/1000).nextDouble()*1000;
@@ -35,15 +30,6 @@ public class TextureHeightMap
 		{
 			out = null;
 		}
-
-		Vertex deep = new Vertex(0,0,128);
-		Vertex shallow = new Vertex(0,0,255);
-		Vertex shore = new Vertex(0,128,255);
-		Vertex sand = new Vertex(240,240,64);
-		Vertex grass = new Vertex(32,160,0);
-		Vertex dirt = new Vertex(224,224,0);
-		Vertex rock = new Vertex(128,128,128);
-		Vertex snow = new Vertex(255,255,255);
 
 		height = new float[640][640];
 		ByteBuffer buffer = BufferUtils.createByteBuffer(640 /*width*/ * 640 /*height*/ * BYTES_PER_PIXEL); //4 for RGBA, 3 for RGB
@@ -60,27 +46,15 @@ public class TextureHeightMap
 				double c = xa * Math.cos(vert);
 				double nois = Noise.PerlinNoise(rx + a, ry + b, rz + c);
 				height[x][y] = (float)nois;
-				Vertex cp = new Vertex(0,0,0);
-				if(nois >= -1 && nois <= -0.25)
-					cp = lerpColor(deep,shallow, ((1+nois)*4)/3);
-				else if(nois > -0.25 && nois <= 0)
-					cp = lerpColor(shallow,shore,(0.25+nois)*4 );
-				else if(nois > 0 && nois <= 0.0625)
-					cp = lerpColor(shore,sand,nois*16 );
-				else if(nois > 0.0625 && nois <= 0.1250)
-					cp = lerpColor(sand,grass,(nois - 0.0625)*16 );
-				else if(nois > 0.1250 && nois <= 0.3750)
-					cp = lerpColor(grass,dirt,(nois - 0.1250)*4 );
-				else if(nois > 0.3750 && nois <= 0.7500)
-					cp = lerpColor(dirt,rock,((nois - 0.3750)*8)/3 );
-				else if(nois > 0.7500 && nois <= 1.0)
-					cp = lerpColor(rock,snow,(nois - 0.7500)*4 );
+
+				Vertex cp = texCol.getColor((float)nois);
 
 				buffer.put((byte) cp.x);	// Red component
 				buffer.put((byte) cp.y);	// Green component
 				buffer.put((byte) cp.z);	// Blue component
 			}
 		}
+
 		buffer.flip();
 		out.close();
 		int textureID = glGenTextures(); //Generate texture ID

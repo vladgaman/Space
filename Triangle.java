@@ -1,12 +1,23 @@
 class Triangle
 {
 	Vertex v1,v2,v3;
+	Vertex normal;
 	Vertex mid;
+	boolean isDivided = false;
+	boolean isSeen = true;
+	int level = 0;
 	Triangle(Vertex vert1, Vertex vert2, Vertex vert3)
 	{
 		v1 = vert1;
 		v2 = vert2;
 		v3 = vert3;
+
+		Vertex v12 = new Vertex(v2);
+		v12.sub(v1);
+		Vertex v23 = new Vertex(v3);
+		v23.sub(v2);
+		normal = v12.cross(v23);
+		normal.normalize();
 	}
 
 	Vertex setMid()
@@ -29,6 +40,17 @@ class Triangle
 		if(v.equals(v3))
 			return v3;
 		return null;
+	}
+
+	boolean isCloseTo(Frustum cam, float distance, Vector coord)
+	{
+		Vertex dist = new Vertex(cam.getCoord());
+		if(mid == null)
+			setMid();
+		Vertex nM = new Vertex(mid);
+		nM.add(new Vertex(coord.x,coord.y,coord.z));
+		dist.sub(nM);
+		return dist.getMagnitude() <= distance;
 	}
 
 	@Override

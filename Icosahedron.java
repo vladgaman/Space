@@ -1,7 +1,9 @@
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import org.lwjgl.BufferUtils;
+import java.lang.Thread;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL20.*;
@@ -9,22 +11,33 @@ import static org.lwjgl.util.glu.GLU.*;
 
 public class Icosahedron
 {
+	private ArrayList<Vertex> baseVertices;
+	private ArrayList<Triangle> baseTriangles;
 	private ArrayList<Vertex> vertices;
 	private ArrayList<Triangle> triangles;
-	Icosahedron()
+	private ArrayList<Triangle> unseenTriangles;
+	private int texture;
+	private float height;
+	private TextureColor textureColor;
+	Icosahedron(long seed, float h, int textureCSeed)
 	{
-		vertices = new ArrayList<Vertex>();
-		triangles = new ArrayList<Triangle>();
+		textureColor = new TextureColor(textureCSeed);
+		texture = TextureHeightMap.createHeightMap(seed, textureColor);
+		height = h;
+		baseVertices = new ArrayList<Vertex>();
+		baseTriangles = new ArrayList<Triangle>();
 		float t = (float)(1 + Math.sqrt(5.0)) / 2.0f;
 		float ang = (float)(Math.atan(-1/t));
 		Vertex v1 = new Vertex(-1, t, 0.0f);
 		Vertex v2 = new Vertex(1, t, 0.0f);
 		Vertex v3 = new Vertex(-1, -t, 0.0f);
 		Vertex v4 = new Vertex(1, -t, 0.0f);
+
 		Vertex v5 = new Vertex(0.0f, -1, t);
 		Vertex v6 = new Vertex(0.0f, 1, t);
 		Vertex v7 = new Vertex(0.0f, -1, -t);
 		Vertex v8 = new Vertex(0.0f, 1, -t);
+
 		Vertex v9 = new Vertex(t,0.0f,-1);
 		Vertex v10 = new Vertex(t, 0.0f, 1);
 		Vertex v11 = new Vertex(-t, 0.0f, -1);
@@ -34,12 +47,6 @@ public class Icosahedron
 		Vertex v14 = v11.getMidV(v12);
 		Vertex v15 = new Vertex(v14);
 		Vertex v16 = new Vertex(v3);
-		v1.isPole = true;	
-		v2.isPole = true;
-		v13.isPole = true;
-		v3.isPole = true;
-		v4.isPole = true;
-		v16.isPole = true;
 
 		v1.normalize();
 		v2.normalize();
@@ -62,86 +69,91 @@ public class Icosahedron
 		v16.normalize();
 		v16.u = 0;
 
-		v1.adjustHeight();
-		v2.adjustHeight();
-		v3.adjustHeight();
-		v4.adjustHeight();
-		v5.adjustHeight();
-		v6.adjustHeight();
-		v7.adjustHeight();
-		v8.adjustHeight();
-		v9.adjustHeight();
-		v10.adjustHeight();
-		v11.adjustHeight();
-		v12.adjustHeight();
-		v13.adjustHeight();
-		v14.adjustHeight();
-		v15.adjustHeight();
-		v16.adjustHeight();
+		v1.adjustHeight(height);
+		v2.adjustHeight(height);
+		v3.adjustHeight(height);
+		v4.adjustHeight(height);
+		v5.adjustHeight(height);
+		v6.adjustHeight(height);
+		v7.adjustHeight(height);
+		v8.adjustHeight(height);
+		v9.adjustHeight(height);
+		v10.adjustHeight(height);
+		v11.adjustHeight(height);
+		v12.adjustHeight(height);
+		v13.adjustHeight(height);
+		v14.adjustHeight(height);
+		v15.adjustHeight(height);
+		v16.adjustHeight(height);
 
-		vertices.add(v1);
-		vertices.add(v2);
-		vertices.add(v3);
-		vertices.add(v4);
-		vertices.add(v5);
-		vertices.add(v6);
-		vertices.add(v7);
-		vertices.add(v8);
-		vertices.add(v9);
-		vertices.add(v10);
-		vertices.add(v11);
-		vertices.add(v12);
-		vertices.add(v13);
-		vertices.add(v14);
-		vertices.add(v15);
-		vertices.add(v16);
+		baseVertices.add(v1);
+		baseVertices.add(v2);
+		baseVertices.add(v3);
+		baseVertices.add(v4);
+		baseVertices.add(v5);
+		baseVertices.add(v6);
+		baseVertices.add(v7);
+		baseVertices.add(v8);
+		baseVertices.add(v9);
+		baseVertices.add(v10);
+		baseVertices.add(v11);
+		baseVertices.add(v12);
+		baseVertices.add(v13);
+		baseVertices.add(v14);
+		baseVertices.add(v15);
+		baseVertices.add(v16);
 
-		triangles.add(new Triangle(v1,v12,v6));
-		triangles.add(new Triangle(v1,v6,v2));// pole
-		triangles.add(new Triangle(v13,v2,v8));// pole
-		triangles.add(new Triangle(v11,v8,v13));//triangles.add(new Triangle(v1,v8,v11));
-		triangles.add(new Triangle(v1,v15,v12));//triangles.add(new Triangle(v1,v11,v12));
+		baseTriangles.add(new Triangle(v1,v6,v12));
+		baseTriangles.add(new Triangle(v1,v2,v6));// pole
+		baseTriangles.add(new Triangle(v13,v8,v2));// pole
+		baseTriangles.add(new Triangle(v11,v8,v13));//baseTriangles.add(new Triangle(v1,v8,v11));
+		baseTriangles.add(new Triangle(v1,v12,v15));//baseTriangles.add(new Triangle(v1,v11,v12));
 
-		triangles.add(new Triangle(v4,v10,v9));
-		triangles.add(new Triangle(v4,v9,v7));
-		triangles.add(new Triangle(v4,v7,v16));//pole
-		triangles.add(new Triangle(v4,v3,v5));//pole
-		triangles.add(new Triangle(v4,v5,v10));
+		baseTriangles.add(new Triangle(v4,v10,v9));
+		baseTriangles.add(new Triangle(v4,v9,v7));
+		baseTriangles.add(new Triangle(v4,v7,v16));//pole
+		baseTriangles.add(new Triangle(v4,v3,v5));//pole
+		baseTriangles.add(new Triangle(v4,v5,v10));
 
-		triangles.add(new Triangle(v6,v5,v12));
-		triangles.add(new Triangle(v5,v12,v3));
-		triangles.add(new Triangle(v3,v12,v15));//triangles.add(new Triangle(v3,v12,v11));
-		triangles.add(new Triangle(v11,v7,v8));
-		triangles.add(new Triangle(v8,v7,v9));
+		baseTriangles.add(new Triangle(v6,v5,v12));
+		baseTriangles.add(new Triangle(v5,v3,v12));
+		baseTriangles.add(new Triangle(v3,v15,v12));//baseTriangles.add(new Triangle(v3,v12,v11));
+		baseTriangles.add(new Triangle(v11,v7,v8));
+		baseTriangles.add(new Triangle(v8,v7,v9));
 
-		triangles.add(new Triangle(v8,v9,v2));
-		triangles.add(new Triangle(v2,v9,v10));
-		triangles.add(new Triangle(v10,v2,v6));
-		triangles.add(new Triangle(v10,v6,v5));
-		triangles.add(new Triangle(v11,v7,v16));//triangles.add(new Triangle(v11,v7,v3));
+		baseTriangles.add(new Triangle(v8,v9,v2));
+		baseTriangles.add(new Triangle(v2,v9,v10));
+		baseTriangles.add(new Triangle(v10,v6,v2));
+		baseTriangles.add(new Triangle(v10,v5,v6));
+		baseTriangles.add(new Triangle(v11,v16,v7));//baseTriangles.add(new Triangle(v11,v7,v3));
 
-		triangles.add(new Triangle(v13,v11,v14));
-		triangles.add(new Triangle(v16,v11,v14));
-
+		baseTriangles.add(new Triangle(v13,v11,v14));
+		baseTriangles.add(new Triangle(v16,v14,v11));
 		subdivide();
+		subdivide();
+		vertices = new ArrayList<Vertex>(baseVertices);
+		triangles = new ArrayList<Triangle>(baseTriangles);
+		unseenTriangles = new ArrayList<Triangle>();
 	}
 
 	void subdivide()
 	{
-		if(triangles.isEmpty())
-			return;
 		ArrayList<Triangle> newTriangles = new ArrayList<Triangle>();
-		for(int i=0;i<triangles.size();)
+		ArrayList<Vertex> newVertices = new ArrayList<Vertex>(baseVertices);
+		for(int i=0;i<baseTriangles.size();)
 		{
-			Triangle aTriangle = triangles.get(i);
-			subdivideTri(aTriangle, newTriangles);
+			Triangle aTriangle = baseTriangles.get(i);
+			baseTriangles.remove(aTriangle);
+			subdivideTri(aTriangle, newTriangles, newVertices);
 		}
-		triangles = new ArrayList<Triangle>(newTriangles);
+		baseTriangles = newTriangles;
+		baseVertices = newVertices;
+		triangles = new ArrayList<Triangle>(baseTriangles);
+		vertices = new ArrayList<Vertex>(baseVertices);
 	}
 
-	void subdivideTri(Triangle tri, ArrayList<Triangle> nTriangles)
+	void subdivideTri(Triangle tri, ArrayList<Triangle> nTriangles, ArrayList<Vertex> nVertices)
 	{
-		triangles.remove(tri);
 		Vertex v1 = new Vertex(tri.v1);
 		v1.normalize();
 		Vertex v2 = new Vertex(tri.v2);
@@ -151,13 +163,13 @@ public class Icosahedron
 
 		Vertex v12 = v1.getMidV(v2);
 		v12.normalize();
-		v12.adjustHeight();
+		v12.adjustHeight(height);
 		Vertex v23 = v2.getMidV(v3);
 		v23.normalize();
-		v23.adjustHeight();
+		v23.adjustHeight(height);
 		Vertex v31 = v3.getMidV(v1);
 		v31.normalize();
-		v31.adjustHeight();
+		v31.adjustHeight(height);
 
 		if(tri.v1.u == 0 && tri.v2.u == 0)
 			v12.u = 0;
@@ -177,25 +189,81 @@ public class Icosahedron
 		setPole(tri.v2,tri.v3,v23);
 		setPole(tri.v1,tri.v3,v31);
 
-		if(!vertices.contains(v12))
-			vertices.add(v12);
+		if(!nVertices.contains(v12))
+			nVertices.add(v12);
 		else
-			v12 = vertices.get(vertices.indexOf(v12));
+			v12 = nVertices.get(nVertices.indexOf(v12));
 
-		if(!vertices.contains(v23))
-			vertices.add(v23);
+		if(!nVertices.contains(v23))
+			nVertices.add(v23);
 		else
-			v23 = vertices.get(vertices.indexOf(v23));
+			v23 = nVertices.get(nVertices.indexOf(v23));
 
-		if(!vertices.contains(v31))
-			vertices.add(v31);
+		if(!nVertices.contains(v31))
+			nVertices.add(v31);
 		else
-			v31 = vertices.get(vertices.indexOf(v31));
+			v31 = nVertices.get(nVertices.indexOf(v31));
 
 		nTriangles.add(new Triangle(tri.v1,v12,v31));
-		nTriangles.add(new Triangle(tri.v2,v12,v23));
-		nTriangles.add(new Triangle(tri.v3,v23,v31));
+		nTriangles.add(new Triangle(tri.v2,v23,v12));
+		nTriangles.add(new Triangle(tri.v3,v31,v23));
 		nTriangles.add(new Triangle(v12,v23,v31));
+	}
+
+	void subdivide(Frustum cam, float distance, int levelOfSub, Vector coord)
+	{
+		ArrayList<Triangle> newTriangles = new ArrayList<Triangle>();
+		ArrayList<Triangle> temp = new ArrayList<Triangle>(triangles);
+		ArrayList<Triangle> tmp;
+		temp.addAll(unseenTriangles);
+
+		triangles = new ArrayList<Triangle>();
+		unseenTriangles = new ArrayList<Triangle>();
+
+		for(Triangle aTriangle : temp)
+		{
+			if(aTriangle.isCloseTo(cam,distance,coord) && aTriangle.level != levelOfSub)
+			{
+				tmp = new ArrayList<Triangle>();
+				subdivideTri(aTriangle,tmp,vertices);
+				for(Triangle t : tmp)
+				{
+					t.level = aTriangle.level + 1;
+					if(t.isCloseTo(cam,distance,coord))
+					{
+						triangles.add(t);
+						t.isSeen = true;
+					}
+					else
+					{
+						unseenTriangles.add(t);
+						t.isSeen = false;
+					}
+				}
+			}
+			else
+			{
+				if(aTriangle.isCloseTo(cam,distance,coord))
+				{
+					triangles.add(aTriangle);
+					aTriangle.isSeen = true;
+				}
+				else
+				{
+					unseenTriangles.add(aTriangle);
+					aTriangle.isSeen = false;
+				}
+			}
+		}
+	}
+
+	void resetSubdivion()
+	{
+		triangles = new ArrayList<Triangle>(baseTriangles);
+		for(Triangle triangle : triangles)
+			triangle.isDivided = false;
+		vertices = new ArrayList<Vertex>(baseVertices);
+		unseenTriangles = new ArrayList<Triangle>();
 	}
 
 	void setPole(Vertex v1, Vertex v2, Vertex v12)
@@ -206,12 +274,12 @@ public class Icosahedron
 		v12.u = (v1.u + v2.u)/2;
 	}
 
-	void draw(int texture)
+	void draw()
 	{
 		float[] vert = new float[vertices.size()*3];
 		float[] vertTex = new float[vertices.size()*2];
 		int[] idx = new int[triangles.size()*3];
-		//normals = new float[ind.size()*3];
+		//float[] normals = new float[vertices.size()*3];
 		for(int i=0;i<triangles.size();i++)
 		{
 			Triangle tr = triangles.get(i);
@@ -241,33 +309,32 @@ public class Icosahedron
 		IntBuffer ind = BufferUtils.createIntBuffer(idx.length);
 		ind.put(idx);
 		ind.flip();
-
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_POINT_SMOOTH);
-
+		//glEnable(GL_LIGHTING);
 		glBindTexture(GL_TEXTURE_2D, texture);	
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glEnableClientState(GL_NORMAL_ARRAY);
+		//glEnableClientState(GL_NORMAL_ARRAY);
 		glEnableClientState(GL_VERTEX_ARRAY);
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		glColor3f(1f,1f,1f);
-		glTexCoordPointer(2, 0, vt);
-		//glNormalPointer(0,n);
 		glVertexPointer(3, 0, vb);
+		//glNormalPointer(0,n);
+		glTexCoordPointer(2, 0, vt);
 		glDrawElements(GL_TRIANGLES, ind);
 
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		/*glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glEnable(GL_POLYGON_OFFSET_LINE);
 		glPolygonOffset( -2, -2 );
-		glColor3f( 0, 0, 0 );
+		glColor3f( 0, 0, 0);
 		glVertexPointer(3, 0, vb);
 		glDrawElements(GL_TRIANGLES, ind);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glDisable(GL_POLYGON_OFFSET_LINE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);*/
+
 		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 		glDisableClientState(GL_VERTEX_ARRAY);
-		glDisableClientState(GL_NORMAL_ARRAY);
-		glDisable(GL_LIGHTING);
+		//glDisableClientState(GL_NORMAL_ARRAY);
+		//glDisable(GL_LIGHTING);
 		glDisable(GL_POINT_SMOOTH);
 		glDisable(GL_TEXTURE_2D);
 	}
